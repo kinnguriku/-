@@ -1,0 +1,46 @@
+    channel_secret = os.environ.get('LINE_CHANNEL_SECRET')
+    channel_access_token = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
+for event in events:
+        if isinstance(event, MessageEvent):             # メッセージイベント受信
+            if isinstance(event.message, TextMessage):  # テキストメッセージの場合
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    make_button_template()
+                )
+            else:
+                continue
+        if isinstance(event, PostbackEvent):            # ポストバックイベント受信
+            line_bot_api.reply_message(
+                event.reply_token,
+                get_omikuji(event.postback.data)
+def make_button_template():
+    omikuji_key = ['0','1','2']                  # おみくじ取得用のキーリスト
+    message_template = TemplateSendMessage(      # テンプレートメッセージ
+        alt_text='おみくじ',
+        template=ButtonsTemplate(                # ボタンテンプレート
+            text='どれにする？',
+            title='おみくじ',
+            actions=[                            # メッセージで表示する各ボタンの定義
+                PostbackAction(                  # 1つめのボタン動作
+                    data=omikuji_key.pop(random.randint(0,2)),
+                    label='これ'
+                ),
+                PostbackAction(                  # 2つめのボタン動作
+                    data=omikuji_key.pop(random.randint(0,1)),
+                    label='それ'
+                ),
+                PostbackAction(                  # 3つめのボタン動作
+                    data=omikuji_key.pop(0),
+                    label='あれ'
+                )
+            ]
+        )
+    )
+    return message_template   
+def get_omikuji(key):
+    result = omikuji[key]                            # おみくじの結果を取得
+    sticker_message = StickerSendMessage(
+        package_id=result[0], sticker_id=result[1]   # 送信するスタンプの定義
+    )
+    text_message = TextSendMessage(text=result[2])   # 送信するテキストメッセージの定義
+    return [sticker_message, text_message]           # スタンプとテキストをリストにして返す
